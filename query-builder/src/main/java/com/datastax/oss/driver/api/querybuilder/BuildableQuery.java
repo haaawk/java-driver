@@ -47,12 +47,30 @@ public interface BuildableQuery {
    * SimpleStatement.newInstance(asCql())
    * }</pre>
    *
-   * In addition, some query implementation might try to infer additional statement properties (such
-   * as {@link Statement#isIdempotent()}).
+   * In addition, some implementations might try to infer additional statement properties (such as
+   * {@link Statement#isIdempotent()}).
    */
   @NonNull
   default SimpleStatement build() {
     return SimpleStatement.newInstance(asCql());
+  }
+
+  /**
+   * Builds the CQL query and wraps it in a simple statement, also providing values for bind
+   * markers.
+   *
+   * <p>This is a similar to:
+   *
+   * <pre>{@code
+   * SimpleStatement.newInstance(asCql(), values)
+   * }</pre>
+   *
+   * In addition, some implementations might try to infer additional statement properties (such as
+   * {@link Statement#isIdempotent()}).
+   */
+  @NonNull
+  default SimpleStatement build(Object... values) {
+    return SimpleStatement.newInstance(asCql(), values);
   }
 
   /**
@@ -71,6 +89,9 @@ public interface BuildableQuery {
    * SimpleStatement statement =
    *     builder.addNamedValue("k", 1).addNamedValue("c", 2).withTracing().build();
    * }</pre>
+   *
+   * In addition, some implementations might try to infer additional statement properties (such as
+   * {@link Statement#isIdempotent()}).
    */
   @NonNull
   default SimpleStatementBuilder builder() {

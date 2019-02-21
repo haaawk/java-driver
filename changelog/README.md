@@ -4,6 +4,8 @@
 
 ### 4.0.0 (in progress)
 
+- [improvement] JAVA-2158: Add build(Object...) variant to BuildableQuery
+
 ### 4.0.0-rc1
 
 - [improvement] JAVA-2106: Log server side warnings returned from a query
