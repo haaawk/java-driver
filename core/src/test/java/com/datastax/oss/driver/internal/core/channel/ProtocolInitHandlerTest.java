@@ -46,11 +46,13 @@ import com.datastax.oss.protocol.internal.response.AuthSuccess;
 import com.datastax.oss.protocol.internal.response.Authenticate;
 import com.datastax.oss.protocol.internal.response.Error;
 import com.datastax.oss.protocol.internal.response.Ready;
+import com.datastax.oss.protocol.internal.response.Supported;
 import com.datastax.oss.protocol.internal.response.result.SetKeyspace;
 import com.datastax.oss.protocol.internal.util.Bytes;
 import io.netty.channel.ChannelFuture;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -131,6 +133,7 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     requestFrame = readOutboundFrame();
     assertThat(requestFrame.message).isInstanceOf(Query.class);
     writeInboundFrame(requestFrame, TestResponses.clusterNameResponse("someClusterName"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     // Init should complete
     assertThat(connectFuture).isSuccess();
@@ -166,6 +169,7 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     requestFrame = readOutboundFrame();
     assertThat(requestFrame.message).isInstanceOf(Query.class);
     writeInboundFrame(requestFrame, TestResponses.clusterNameResponse("someClusterName"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     // Init should complete
     assertThat(connectFuture).isSuccess();
@@ -262,6 +266,8 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     requestFrame = readOutboundFrame();
     writeInboundFrame(requestFrame, TestResponses.clusterNameResponse("someClusterName"));
 
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
+
     assertThat(connectFuture).isSuccess();
   }
 
@@ -295,6 +301,7 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     requestFrame = readOutboundFrame();
     assertThat(requestFrame.message).isInstanceOf(Query.class);
     writeInboundFrame(requestFrame, TestResponses.clusterNameResponse("someClusterName"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
     assertThat(connectFuture).isSuccess();
   }
 
@@ -370,6 +377,7 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     assertThat(connectFuture).isNotDone();
 
     writeInboundFrame(requestFrame, TestResponses.clusterNameResponse("expectedClusterName"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     assertThat(connectFuture).isSuccess();
   }
@@ -430,6 +438,7 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     assertThat(requestFrame.message).isInstanceOf(Query.class);
     assertThat(((Query) requestFrame.message).query).isEqualTo("USE \"ks\"");
     writeInboundFrame(requestFrame, new SetKeyspace("ks"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     assertThat(connectFuture).isSuccess();
   }
@@ -461,6 +470,7 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     assertThat(requestFrame.message).isInstanceOf(Register.class);
     assertThat(((Register) requestFrame.message).eventTypes).containsExactly("foo", "bar");
     writeInboundFrame(requestFrame, new Ready());
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     assertThat(connectFuture).isSuccess();
   }
@@ -500,6 +510,7 @@ public class ProtocolInitHandlerTest extends ChannelHandlerTestBase {
     assertThat(requestFrame.message).isInstanceOf(Register.class);
     assertThat(((Register) requestFrame.message).eventTypes).containsExactly("foo", "bar");
     writeInboundFrame(requestFrame, new Ready());
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     assertThat(connectFuture).isSuccess();
   }

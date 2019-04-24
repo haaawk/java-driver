@@ -28,8 +28,10 @@ import com.datastax.oss.protocol.internal.Frame;
 import com.datastax.oss.protocol.internal.ProtocolConstants;
 import com.datastax.oss.protocol.internal.response.Error;
 import com.datastax.oss.protocol.internal.response.Ready;
+import com.datastax.oss.protocol.internal.response.Supported;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.junit.Test;
@@ -107,6 +109,9 @@ public class ChannelFactoryProtocolNegotiationTest extends ChannelFactoryTestBas
 
     requestFrame = readOutboundFrame();
     writeInboundFrame(requestFrame, TestResponses.clusterNameResponse("mockClusterName"));
+
+    requestFrame = readOutboundFrame();
+    writeInboundFrame(requestFrame, new Supported(new HashMap<>()));
 
     // Then
     assertThatStage(channelFuture)

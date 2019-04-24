@@ -27,11 +27,14 @@ import com.datastax.oss.driver.api.core.connection.ConnectionInitException;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.internal.core.context.InternalDriverContext;
+import com.datastax.oss.driver.internal.core.protocol.ShardingInfo;
+import com.datastax.oss.driver.internal.core.protocol.ShardingInfo.ConnectionShardingInfo;
 import com.datastax.oss.driver.internal.core.util.ProtocolUtils;
 import com.datastax.oss.driver.internal.core.util.concurrent.UncaughtExceptions;
 import com.datastax.oss.protocol.internal.Message;
 import com.datastax.oss.protocol.internal.ProtocolConstants;
 import com.datastax.oss.protocol.internal.request.AuthResponse;
+import com.datastax.oss.protocol.internal.request.Options;
 import com.datastax.oss.protocol.internal.request.Query;
 import com.datastax.oss.protocol.internal.request.Register;
 import com.datastax.oss.protocol.internal.request.Startup;
@@ -40,6 +43,7 @@ import com.datastax.oss.protocol.internal.response.AuthSuccess;
 import com.datastax.oss.protocol.internal.response.Authenticate;
 import com.datastax.oss.protocol.internal.response.Error;
 import com.datastax.oss.protocol.internal.response.Ready;
+import com.datastax.oss.protocol.internal.response.Supported;
 import com.datastax.oss.protocol.internal.response.result.Rows;
 import com.datastax.oss.protocol.internal.response.result.SetKeyspace;
 import io.netty.channel.ChannelHandlerContext;
@@ -122,6 +126,7 @@ class ProtocolInitHandler extends ConnectInitHandler {
     SET_KEYSPACE,
     AUTH_RESPONSE,
     REGISTER,
+    SHARDING_INFO
   }
 
   private class InitRequest extends ChannelHandlerRequest {
@@ -154,6 +159,8 @@ class ProtocolInitHandler extends ConnectInitHandler {
           return new AuthResponse(authReponseToken);
         case REGISTER:
           return new Register(options.eventTypes);
+        case SHARDING_INFO:
+          return Options.INSTANCE;
         default:
           throw new AssertionError("unhandled step: " + step);
       }
@@ -249,6 +256,9 @@ class ProtocolInitHandler extends ConnectInitHandler {
             } else if (!options.eventTypes.isEmpty()) {
               step = Step.REGISTER;
               send();
+            } else if (initialProtocolVersion.supportsShardingInfo()) {
+              step = Step.SHARDING_INFO;
+              send();
             } else {
               setConnectSuccess();
             }
@@ -257,10 +267,25 @@ class ProtocolInitHandler extends ConnectInitHandler {
           if (!options.eventTypes.isEmpty()) {
             step = Step.REGISTER;
             send();
+          } else if (initialProtocolVersion.supportsShardingInfo()) {
+            step = Step.SHARDING_INFO;
+            send();
           } else {
             setConnectSuccess();
           }
         } else if (step == Step.REGISTER && response instanceof Ready) {
+          if (initialProtocolVersion.supportsShardingInfo()) {
+            step = Step.SHARDING_INFO;
+            send();
+          } else {
+            setConnectSuccess();
+          }
+        } else if (step == Step.SHARDING_INFO && response instanceof Supported) {
+          Supported res = (Supported) response;
+          ConnectionShardingInfo info = ShardingInfo.parseShardingInfo(res.options);
+          if (info != null) {
+            channel.attr(DriverChannel.SHARDING_INFO_KEY).set(info);
+          }
           setConnectSuccess();
         } else if (response instanceof Error) {
           Error error = (Error) response;

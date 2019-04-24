@@ -36,6 +36,7 @@ import com.datastax.oss.protocol.internal.Frame;
 import com.datastax.oss.protocol.internal.FrameCodec;
 import com.datastax.oss.protocol.internal.Message;
 import com.datastax.oss.protocol.internal.response.Ready;
+import com.datastax.oss.protocol.internal.response.Supported;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -50,6 +51,7 @@ import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Exchanger;
@@ -204,6 +206,9 @@ public abstract class ChannelFactoryTestBase {
 
     requestFrame = readOutboundFrame();
     writeInboundFrame(requestFrame, TestResponses.clusterNameResponse("mockClusterName"));
+
+    requestFrame = readOutboundFrame();
+    writeInboundFrame(requestFrame, new Supported(new HashMap<>()));
   }
 
   ChannelFactory newChannelFactory() {

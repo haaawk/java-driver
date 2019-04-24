@@ -24,6 +24,8 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.internal.core.TestResponses;
 import com.datastax.oss.driver.internal.core.metrics.NoopNodeMetricUpdater;
 import com.datastax.oss.protocol.internal.response.Ready;
+import com.datastax.oss.protocol.internal.response.Supported;
+import java.util.HashMap;
 import java.util.concurrent.CompletionStage;
 import org.junit.Test;
 
@@ -43,6 +45,7 @@ public class ChannelFactoryClusterNameTest extends ChannelFactoryTestBase {
 
     writeInboundFrame(readOutboundFrame(), new Ready());
     writeInboundFrame(readOutboundFrame(), TestResponses.clusterNameResponse("mockClusterName"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     // Then
     assertThatStage(channelFuture).isSuccess();
@@ -63,6 +66,7 @@ public class ChannelFactoryClusterNameTest extends ChannelFactoryTestBase {
     // open a first connection that will define the cluster name
     writeInboundFrame(readOutboundFrame(), new Ready());
     writeInboundFrame(readOutboundFrame(), TestResponses.clusterNameResponse("mockClusterName"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
     assertThatStage(channelFuture).isSuccess();
     // open a second connection that returns the same cluster name
     channelFuture =
@@ -70,6 +74,7 @@ public class ChannelFactoryClusterNameTest extends ChannelFactoryTestBase {
             SERVER_ADDRESS, DriverChannelOptions.DEFAULT, NoopNodeMetricUpdater.INSTANCE);
     writeInboundFrame(readOutboundFrame(), new Ready());
     writeInboundFrame(readOutboundFrame(), TestResponses.clusterNameResponse("mockClusterName"));
+    writeInboundFrame(readOutboundFrame(), new Supported(new HashMap<>()));
 
     // Then
     assertThatStage(channelFuture).isSuccess();
