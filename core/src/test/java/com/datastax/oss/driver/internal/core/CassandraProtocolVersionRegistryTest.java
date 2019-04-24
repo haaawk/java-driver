@@ -117,5 +117,10 @@ public class CassandraProtocolVersionRegistryTest {
     public String toString() {
       return name() + (beta ? "_BETA" : "");
     }
+
+    @Override
+    public boolean supportsShardingInfo() {
+      return false;
+    }
   }
 }
