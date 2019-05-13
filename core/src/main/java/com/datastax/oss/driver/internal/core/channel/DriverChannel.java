@@ -18,6 +18,7 @@ package com.datastax.oss.driver.internal.core.channel;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
+import com.datastax.oss.driver.internal.core.protocol.ShardingInfo;
 import com.datastax.oss.driver.internal.core.protocol.ShardingInfo.ConnectionShardingInfo;
 import com.datastax.oss.driver.internal.core.util.concurrent.UncaughtExceptions;
 import com.datastax.oss.protocol.internal.Message;
@@ -121,6 +122,16 @@ public class DriverChannel {
    */
   public String getClusterName() {
     return channel.attr(CLUSTER_NAME_KEY).get();
+  }
+
+  public int getShardId() {
+    return channel.hasAttr(SHARDING_INFO_KEY) ? channel.attr(SHARDING_INFO_KEY).get().shardId : 0;
+  }
+
+  public ShardingInfo getShardingInfo() {
+    return channel.hasAttr(SHARDING_INFO_KEY)
+        ? channel.attr(SHARDING_INFO_KEY).get().shardingInfo
+        : null;
   }
 
   /**

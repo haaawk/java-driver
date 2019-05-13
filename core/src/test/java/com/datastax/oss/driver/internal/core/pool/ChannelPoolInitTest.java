@@ -61,7 +61,7 @@ public class ChannelPoolInitTest extends ChannelPoolTestBase {
     waitForPendingAdminTasks();
 
     assertThatStage(poolFuture)
-        .isSuccess(pool -> assertThat(pool.channels).containsOnly(channel1, channel2, channel3));
+        .isSuccess(pool -> assertThat(pool.channels[0]).containsOnly(channel1, channel2, channel3));
     verify(eventBus, times(3)).fire(ChannelEvent.channelOpened(node));
 
     factoryHelper.verifyNoMoreCalls();
@@ -81,12 +81,12 @@ public class ChannelPoolInitTest extends ChannelPoolTestBase {
     CompletionStage<ChannelPool> poolFuture =
         ChannelPool.init(node, null, NodeDistance.LOCAL, context, "test");
 
-    factoryHelper.waitForCalls(node, 3);
+    factoryHelper.waitForCalls(node, 1);
     waitForPendingAdminTasks();
 
-    assertThatStage(poolFuture).isSuccess(pool -> assertThat(pool.channels).isEmpty());
+    assertThatStage(poolFuture).isSuccess(pool -> assertThat(pool.channels).isNull());
     verify(eventBus, never()).fire(ChannelEvent.channelOpened(node));
-    verify(nodeMetricUpdater, times(3))
+    verify(nodeMetricUpdater, times(1))
         .incrementCounter(DefaultNodeMetric.CONNECTION_INIT_ERRORS, null);
 
     factoryHelper.verifyNoMoreCalls();
@@ -106,13 +106,13 @@ public class ChannelPoolInitTest extends ChannelPoolTestBase {
     CompletionStage<ChannelPool> poolFuture =
         ChannelPool.init(node, null, NodeDistance.LOCAL, context, "test");
 
-    factoryHelper.waitForCalls(node, 3);
+    factoryHelper.waitForCalls(node, 1);
     waitForPendingAdminTasks();
     assertThatStage(poolFuture)
         .isSuccess(
             pool -> {
               assertThat(pool.isInvalidKeyspace()).isTrue();
-              verify(nodeMetricUpdater, times(3))
+              verify(nodeMetricUpdater, times(1))
                   .incrementCounter(DefaultNodeMetric.CONNECTION_INIT_ERRORS, null);
             });
   }
@@ -132,13 +132,13 @@ public class ChannelPoolInitTest extends ChannelPoolTestBase {
 
     ChannelPool.init(node, null, NodeDistance.LOCAL, context, "test");
 
-    factoryHelper.waitForCalls(node, 3);
+    factoryHelper.waitForCalls(node, 1);
     waitForPendingAdminTasks();
 
     verify(eventBus).fire(TopologyEvent.forceDown(node.getBroadcastRpcAddress().get()));
     verify(eventBus, never()).fire(ChannelEvent.channelOpened(node));
 
-    verify(nodeMetricUpdater, times(3))
+    verify(nodeMetricUpdater, times(1))
         .incrementCounter(DefaultNodeMetric.CONNECTION_INIT_ERRORS, null);
     factoryHelper.verifyNoMoreCalls();
   }
@@ -171,12 +171,11 @@ public class ChannelPoolInitTest extends ChannelPoolTestBase {
 
     assertThatStage(poolFuture).isSuccess();
     ChannelPool pool = poolFuture.toCompletableFuture().get();
-    assertThat(pool.channels).containsOnly(channel1);
-    inOrder.verify(eventBus).fire(ChannelEvent.channelOpened(node));
-
     // A reconnection should have been scheduled
     verify(reconnectionSchedule).nextDelay();
     inOrder.verify(eventBus).fire(ChannelEvent.reconnectionStarted(node));
+    assertThat(pool.channels[0]).containsOnly(channel1);
+    inOrder.verify(eventBus).fire(ChannelEvent.channelOpened(node));
 
     channel2Future.complete(channel2);
     factoryHelper.waitForCalls(node, 1);
@@ -184,7 +183,7 @@ public class ChannelPoolInitTest extends ChannelPoolTestBase {
     inOrder.verify(eventBus).fire(ChannelEvent.channelOpened(node));
     inOrder.verify(eventBus).fire(ChannelEvent.reconnectionStopped(node));
 
-    assertThat(pool.channels).containsOnly(channel1, channel2);
+    assertThat(pool.channels[0]).containsOnly(channel1, channel2);
 
     verify(nodeMetricUpdater).incrementCounter(DefaultNodeMetric.CONNECTION_INIT_ERRORS, null);
     factoryHelper.verifyNoMoreCalls();

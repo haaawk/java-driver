@@ -17,6 +17,7 @@ package com.datastax.oss.driver.internal.core.pool;
 
 import static com.datastax.oss.driver.Assertions.assertThat;
 import static com.datastax.oss.driver.Assertions.assertThatStage;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,7 +54,7 @@ public class ChannelPoolKeyspaceTest extends ChannelPoolTestBase {
 
     assertThatStage(poolFuture).isSuccess();
     ChannelPool pool = poolFuture.toCompletableFuture().get();
-    assertThat(pool.channels).containsOnly(channel1, channel2);
+    assertThat(pool.channels[0]).containsOnly(channel1, channel2);
 
     CqlIdentifier newKeyspace = CqlIdentifier.fromCql("new_keyspace");
     CompletionStage<Void> setKeyspaceFuture = pool.setKeyspace(newKeyspace);
@@ -81,8 +82,8 @@ public class ChannelPoolKeyspaceTest extends ChannelPoolTestBase {
         MockChannelFactoryHelper.builder(channelFactory)
             // init
             .failure(node, "mock channel init failure")
-            .failure(node, "mock channel init failure")
             // reconnection
+            .failure(node, "mock channel init failure")
             .pending(node, channel1Future)
             .pending(node, channel2Future)
             .build();
@@ -90,16 +91,15 @@ public class ChannelPoolKeyspaceTest extends ChannelPoolTestBase {
     CompletionStage<ChannelPool> poolFuture =
         ChannelPool.init(node, null, NodeDistance.LOCAL, context, "test");
 
-    factoryHelper.waitForCalls(node, 2);
+    factoryHelper.waitForCalls(node, 3);
     waitForPendingAdminTasks();
 
     assertThatStage(poolFuture).isSuccess();
     ChannelPool pool = poolFuture.toCompletableFuture().get();
 
     // Check that reconnection has kicked in, but do not complete it yet
-    verify(reconnectionSchedule).nextDelay();
+    verify(reconnectionSchedule, times(2)).nextDelay();
     verify(eventBus).fire(ChannelEvent.reconnectionStarted(node));
-    factoryHelper.waitForCalls(node, 2);
 
     // Switch keyspace, it succeeds immediately since there is no active channel
     CqlIdentifier newKeyspace = CqlIdentifier.fromCql("new_keyspace");
@@ -114,7 +114,8 @@ public class ChannelPoolKeyspaceTest extends ChannelPoolTestBase {
 
     verify(eventBus).fire(ChannelEvent.reconnectionStopped(node));
     verify(channel1).setKeyspace(newKeyspace);
-    verify(channel2).setKeyspace(newKeyspace);
+
+    factoryHelper.waitForCalls(node, 1);
 
     factoryHelper.verifyNoMoreCalls();
   }

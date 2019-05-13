@@ -135,6 +135,12 @@ public class RequestHandlerTestHarness implements AutoCloseable {
     when(context.getTimestampGenerator()).thenReturn(timestampGenerator);
 
     pools = builder.buildMockPools();
+    when(session.getChannel(any(Node.class), anyString(), any()))
+        .thenAnswer(
+            invocation -> {
+              Node node = invocation.getArgument(0);
+              return pools.get(node).next();
+            });
     when(session.getChannel(any(Node.class), anyString()))
         .thenAnswer(
             invocation -> {

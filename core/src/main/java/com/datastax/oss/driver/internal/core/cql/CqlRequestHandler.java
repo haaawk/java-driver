@@ -261,9 +261,10 @@ public class CqlRequestHandler implements Throttled {
     }
     Node node = retriedNode;
     DriverChannel channel = null;
-    if (node == null || (channel = session.getChannel(node, logPrefix)) == null) {
+    if (node == null
+        || (channel = session.getChannel(node, logPrefix, statement.getRoutingToken())) == null) {
       while (!result.isDone() && (node = queryPlan.poll()) != null) {
-        channel = session.getChannel(node, logPrefix);
+        channel = session.getChannel(node, logPrefix, statement.getRoutingToken());
         if (channel != null) {
           break;
         }
