@@ -316,6 +316,7 @@ public abstract class SessionBuilder<SelfT extends SessionBuilder, SessionT> {
    */
   @NonNull
   public CompletionStage<SessionT> buildAsync() {
+    System.out.println("Using Scylla optimized driver!!!");
     CompletionStage<CqlSession> buildStage = buildDefaultSessionAsync();
     CompletionStage<SessionT> wrapStage = buildStage.thenApply(this::wrap);
     // thenApply does not propagate cancellation (!)
